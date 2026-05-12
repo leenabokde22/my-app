@@ -1,100 +1,128 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { supabase } from "./supabaseClient";
 
 function Login() {
-  const [form, setForm] = useState({
-    email: "",
-    password: ""
-  });
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e) => {
+  async function handleLogin(e) {
+
     e.preventDefault();
 
-    const res = await fetch("http://localhost:5000/api/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(form)
-    });
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-    const data = await res.json();
-
-    if (data.user) {
-      localStorage.setItem("user", JSON.stringify(data.user));
-      alert("Login Success");
+    if (error) {
+      alert(error.message);
     } else {
-      alert("Invalid Login");
+      alert("Login Successful");
+      console.log(data);
     }
-  };
-
-  const styles = {
-    container: {
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: "100vh",
-      background: "#f0f2f5"
-    },
-    form: {
-      background: "#fff",
-      padding: "30px",
-      borderRadius: "10px",
-      width: "350px",
-      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-      textAlign: "center"
-    },
-    heading: {
-      marginBottom: "20px",
-      color: "#333"
-    },
-    input: {
-      width: "100%",
-      padding: "10px",
-      marginBottom: "15px",
-      borderRadius: "6px",
-      border: "1px solid #ccc",
-      outline: "none",
-      fontSize: "14px"
-    },
-    button: {
-      width: "100%",
-      padding: "10px",
-      background: "#1877f2",
-      color: "#fff",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: "16px",
-      fontWeight: "bold"
-    }
-  };
+  }
 
   return (
-    <div style={styles.container}>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <h2 style={styles.heading}>Login</h2>
+    <div
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(to right, #833ab4, #fd1d1d, #fcb045)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "20px"
+      }}
+    >
 
-        <input
-          name="email"
-          placeholder="Email"
-          onChange={handleChange}
-          style={styles.input}
-        />
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+          background: "white",
+          padding: "35px",
+          borderRadius: "20px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+        }}
+      >
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          onChange={handleChange}
-          style={styles.input}
-        />
+        <h2
+          style={{
+            textAlign: "center",
+            marginBottom: "30px",
+            fontSize: "35px",
+            color: "#333",
+            fontWeight: "bold"
+          }}
+        >
+          🔐 Login
+        </h2>
 
-        <button style={styles.button}>Login</button>
-      </form>
+        <form onSubmit={handleLogin}>
+
+          <input
+            type="email"
+            placeholder="Enter Email"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+            style={{
+              width: "100%",
+              padding: "14px",
+              marginBottom: "20px",
+              borderRadius: "10px",
+              border: "1px solid #ccc",
+              outline: "none",
+              fontSize: "16px",
+              boxSizing: "border-box"
+            }}
+          />
+
+          <input
+            type="password"
+            placeholder="Enter Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
+            style={{
+              width: "100%",
+              padding: "14px",
+              marginBottom: "25px",
+              borderRadius: "10px",
+              border: "1px solid #ccc",
+              outline: "none",
+              fontSize: "16px",
+              boxSizing: "border-box"
+            }}
+          />
+
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "14px",
+              border: "none",
+              borderRadius: "12px",
+              background:
+                "linear-gradient(to right, #833ab4, #fd1d1d, #fcb045)",
+              color: "white",
+              fontSize: "18px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              transition: "0.3s"
+            }}
+          >
+            Login 🚀
+          </button>
+
+        </form>
+
+      </div>
+
     </div>
   );
 }

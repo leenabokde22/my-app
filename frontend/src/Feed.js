@@ -1,80 +1,135 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
 
 function Feed() {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/posts/all")
-      .then(res => res.json())
-      .then(data => {
-        console.log("API Response:", data); // 👈 debug
-
-        // ✅ FIX: handle both cases
-        if (Array.isArray(data)) {
-          setPosts(data);
-        } else if (Array.isArray(data.posts)) {
-          setPosts(data.posts);
-        } else {
-          setPosts([]); // fallback
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching posts:", err);
-        setPosts([]);
-      });
+    fetchPosts();
   }, []);
 
-  const styles = {
-    container: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      background: "#f0f2f5",
-      minHeight: "100vh",
-      padding: "20px"
-    },
-    title: {
-      fontSize: "28px",
-      fontWeight: "bold",
-      marginBottom: "20px",
-      color: "#333"
-    },
-    card: {
-      width: "350px",
-      background: "#fff",
-      borderRadius: "10px",
-      boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-      marginBottom: "20px",
-      overflow: "hidden"
-    },
-    image: {
-      width: "100%",
-      height: "300px",
-      objectFit: "cover"
-    },
-    caption: {
-      padding: "10px",
-      fontSize: "14px",
-      color: "#444"
-    }
-  };
+  async function fetchPosts() {
+    const { data } = await supabase
+      .from("posts")
+      .select("*")
+      .order("id", { ascending: false });
+
+    setPosts(data || []);
+  }
+
+  async function likePost(id, likes) {
+    await supabase
+      .from("posts")
+      .update({ likes: likes + 1 })
+      .eq("id", id);
+
+    fetchPosts();
+  }
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Feed</h2>
+      <div style={styles.wrapper}>
 
-      {!Array.isArray(posts) || posts.length === 0 ? (
-        <p>No posts yet 😢</p>
-      ) : (
-        posts.map((p) => (
-          <div style={styles.card} key={p.id}>
-            <img src={p.image} alt="post" style={styles.image} />
-            <p style={styles.caption}>{p.caption}</p>
+        <h2 style={styles.title}>📸 Instagram Feed</h2>
+
+        {posts.map((post) => (
+          <div key={post.id} style={styles.card}>
+
+            <img
+              src={post.image}
+              alt=""
+              style={styles.image}
+            />
+
+            <div style={styles.content}>
+
+              <p style={styles.caption}>
+                {post.caption}
+              </p>
+
+              <button
+                style={styles.button}
+                onClick={() =>
+                  likePost(post.id, post.likes)
+                }
+              >
+                ❤️ Like
+              </button>
+
+              <p style={styles.likes}>
+                ❤️ Likes: {post.likes}
+              </p>
+
+            </div>
+
           </div>
-        ))
-      )}
+        ))}
+
+      </div>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    minHeight: "100vh",
+    padding: "30px 15px",
+    background:
+      "linear-gradient(to right, #833ab4, #fd1d1d, #fcb045)",
+  },
+
+  wrapper: {
+    maxWidth: "550px",
+    margin: "0 auto",
+  },
+
+  title: {
+    textAlign: "center",
+    color: "white",
+    fontSize: "38px",
+    marginBottom: "30px",
+    fontWeight: "bold",
+    textShadow: "2px 2px 10px rgba(0,0,0,0.3)",
+  },
+
+  card: {
+    background: "white",
+    marginBottom: "30px",
+    borderRadius: "20px",
+    overflow: "hidden",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+  },
+
+  image: {
+    width: "100%",
+    objectFit: "cover",
+  },
+
+  content: {
+    padding: "20px",
+  },
+
+  caption: {
+    fontSize: "17px",
+    color: "#333",
+    marginBottom: "15px",
+  },
+
+  button: {
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "10px",
+    background: "linear-gradient(to right, #833ab4, #fd1d1d)",
+    color: "white",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+
+  likes: {
+    marginTop: "15px",
+    fontWeight: "bold",
+    color: "#444",
+  },
+};
 
 export default Feed;

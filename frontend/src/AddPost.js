@@ -1,111 +1,132 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { supabase } from "./supabaseClient";
 
-function AddPost() {
-  const [post, setPost] = useState({
-    image: "",
-    caption: ""
-  });
+function UploadPost() {
+  const [image, setImage] = useState(null);
+  const [caption, setCaption] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  const handleChange = (e) => {
-    setPost({ ...post, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
+  const handleUpload = async (e) => {
     e.preventDefault();
 
-    await fetch("http://localhost:5000/api/posts/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        ...post,
-        user_id: user.id
-      })
-    });
+    if (!image) return alert("Please select image");
 
-    alert("Post Added");
+    setLoading(true);
+
+    const fileName = `${Date.now()}-${image.name}`;
+
+    const { error } = await supabase.storage
+      .from("posts")
+      .upload(fileName, image);
+
+    if (error) {
+      console.log(error);
+      setLoading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("posts")
+      .getPublicUrl(fileName);
+
+    await supabase.from("posts").insert([
+      {
+        image: urlData.publicUrl,
+        caption,
+        likes: 0,
+      },
+    ]);
+
+    setLoading(false);
+    setImage(null);
+    setCaption("");
+    alert("Uploaded 🚀");
   };
 
-  const styles = {
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-    background: "#f0f2f5"
-  },
-  form: {
-    background: "#fff",
-    padding: "25px",
-    borderRadius: "10px",
-    width: "350px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    textAlign: "center"
-  },
-  heading: {
-    marginBottom: "20px",
-    color: "#333"
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    marginBottom: "15px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    outline: "none",
-    fontSize: "14px"
-  },
-  button: {
-    width: "100%",
-    padding: "10px",
-    background: "#1877f2",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: "bold"
-  },
-  image: {
-    width: "100%",
-    marginTop: "15px",
-    borderRadius: "8px"
-  }
-};
   return (
     <div style={styles.container}>
-    <form onSubmit={handleSubmit} style={styles.form}>
-      <h2 style={styles.heading}>Add Post</h2>
+      <div style={styles.box}>
+        <h2 style={styles.title}>📤 Upload Post</h2>
 
-      <input
-        name="image"
-        placeholder="Image URL"
-        onChange={handleChange}
-        style={styles.input}
-      />
+        <form onSubmit={handleUpload}>
 
-      <input
-        name="caption"
-        placeholder="Caption"
-        onChange={handleChange}
-        style={styles.input}
-      />
+          <input
+            type="file"
+            onChange={(e) => setImage(e.target.files[0])}
+            style={styles.input}
+          />
 
-      <button style={styles.button}>Add Post</button>
+          <input
+            type="text"
+            placeholder="Write caption..."
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            style={styles.input}
+          />
 
-      {post.image && (
-        <img
-          src={post.image}
-          alt="preview"
-          style={styles.image}
-        />
-      )}
-    </form>
-  </div>
+          <button style={styles.button}>
+            {loading ? "Uploading..." : "Upload"}
+          </button>
+
+        </form>
+      </div>
+    </div>
   );
 }
 
-export default AddPost;
+const styles = {
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: "20px",
+    background:
+      "linear-gradient(to right, #833ab4, #fd1d1d, #fcb045)",
+  },
+
+  box: {
+    width: "100%",
+    maxWidth: "400px",
+    background: "white",
+    padding: "25px",
+    borderRadius: "20px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+    textAlign: "center",
+    transition: "0.3s",
+  },
+
+  title: {
+    marginBottom: "20px",
+    color: "#333",
+    fontSize: "22px",
+    fontWeight: "bold",
+  },
+
+  input: {
+    width: "100%",
+    padding: "12px",
+    marginBottom: "15px",
+    borderRadius: "10px",
+    border: "1px solid #ddd",
+    outline: "none",
+    fontSize: "14px",
+    boxSizing: "border-box",
+    transition: "0.3s",
+  },
+
+  button: {
+    width: "100%",
+    padding: "12px",
+    border: "none",
+    borderRadius: "10px",
+    background: "linear-gradient(to right, #833ab4, #fd1d1d)",
+    color: "white",
+    fontWeight: "bold",
+    cursor: "pointer",
+    fontSize: "15px",
+    transition: "0.3s",
+  },
+};
+
+export default UploadPost;
